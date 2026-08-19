@@ -1,0 +1,13 @@
+-- =====================================================================
+-- 0022 — superseded by 0000_normalize_boolean_flags.sql
+--
+-- The boolean->integer normalization originally added here sorted AFTER the
+-- failing 0008 seed, so on the shared production DB the runner aborted at 0008
+-- and 0022 never ran. The logic now lives in 0000_normalize_boolean_flags.sql
+-- which runs FIRST (before any INSERT that could hit a legacy BOOLEAN column)
+-- and covers the full set of flag columns.
+--
+-- This file is intentionally a no-op so the migration sequence stays intact and
+-- re-running it on any database is harmless.
+-- =====================================================================
+SELECT 1;
