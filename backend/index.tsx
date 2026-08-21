@@ -4020,8 +4020,8 @@ const EXPORT_DATASETS: Record<string, { label: string; sql: string; cols: string
   },
   products: {
     label: 'Inventory / Products',
-    sql: `SELECT id, sku, name, category, product_type, payment_option_mode, financing_model, financing_interest_pct, cash_deposit_pct, financing_deposit_pct, buying_price, cash_price, credit_price, quantity, unit, reorder_threshold FROM products`,
-    cols: ['id', 'sku', 'name', 'category', 'product_type', 'payment_option_mode', 'financing_model', 'financing_interest_pct', 'cash_deposit_pct', 'financing_deposit_pct', 'buying_price', 'cash_price', 'credit_price', 'quantity', 'unit', 'reorder_threshold'],
+    sql: `SELECT id, sku, name, category, product_type, payment_option_mode, financing_model, financing_interest_pct, cash_deposit_pct, financing_deposit_pct, buying_price, cash_price, credit_price, quantity, unit, reorder_threshold, image FROM products`,
+    cols: ['id', 'sku', 'name', 'category', 'product_type', 'payment_option_mode', 'financing_model', 'financing_interest_pct', 'cash_deposit_pct', 'financing_deposit_pct', 'buying_price', 'cash_price', 'credit_price', 'quantity', 'unit', 'reorder_threshold', 'image'],
     filterable: { category: 'category' }
   },
   contracts: {
@@ -4069,8 +4069,17 @@ async function buildExport(c: any, dataset: string, filters: Record<string, stri
   let sql = def.sql
   if (where.length) sql += (hasWhere ? ' AND ' : ' WHERE ') + where.join(' AND ')
   sql += ` ORDER BY 1 DESC`
-  const stmt = binds.length ? c.env.DB.prepare(sql).bind(...binds) : c.env.DB.prepare(sql)
-  const { results } = await stmt.all()
+  // Run the export under admin context so PostgreSQL Row-Level Security never
+  // strips rows. Admins/super-admins ARE authorized to export the whole dataset;
+  // without this the ownership RLS policies (keyed on app.current_user_id, which
+  // can be lost/narrowed on a pooled connection between requests) intermittently
+  // returned ZERO rows — producing a file with only the header line and no data.
+  // This mirrors buildFullExportCsv(), which already wraps its reads this way.
+  const results = await withAdminContext(c, async () => {
+    const stmt = binds.length ? c.env.DB.prepare(sql).bind(...binds) : c.env.DB.prepare(sql)
+    const out = await stmt.all()
+    return out.results
+  })
   // Mask non-deliverable placeholder emails so exports never leak internal
   // synthetic addresses (they mean "no email on file").
   const rows = (results || []).map((r: any) => (r && 'email' in r && isPlaceholderEmail(r.email)) ? { ...r, email: '' } : r)

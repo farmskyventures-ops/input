@@ -32,6 +32,20 @@ CREATE OR REPLACE FUNCTION current_app_user_id() RETURNS INTEGER AS $$
   SELECT NULLIF(current_setting('app.current_user_id', true), '')::INTEGER;
 $$ LANGUAGE sql STABLE;
 
+-- TEXT-typed variant of the session user id. Ownership columns that reference a
+-- user (agent_id, onboarded_by, created_by, user_id) were migrated to TEXT in
+-- later schema revisions (see migrations 0024-0026). Comparing those TEXT
+-- columns against the INTEGER current_app_user_id() raised
+--   "operator does not exist: text = integer"
+-- which made the CREATE POLICY statements FAIL. A table left with RLS ENABLED
+-- + FORCED but NO policy denies EVERY row — even to admins — so exports and
+-- admin lists of customers / contracts / repayments came back with headers but
+-- ZERO data rows. Comparing as TEXT is type-agnostic (works whether the column
+-- is TEXT or INTEGER) and fixes the policy creation.
+CREATE OR REPLACE FUNCTION current_app_user_id_text() RETURNS TEXT AS $$
+  SELECT NULLIF(current_setting('app.current_user_id', true), '');
+$$ LANGUAGE sql STABLE;
+
 CREATE OR REPLACE FUNCTION current_app_is_admin() RETURNS BOOLEAN AS $$
   SELECT COALESCE(current_setting('app.current_role', true), '') IN ('admin', 'super_admin');
 $$ LANGUAGE sql STABLE;
@@ -49,8 +63,8 @@ ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ownership_customers ON customers;
 CREATE POLICY ownership_customers ON customers
-  USING (current_app_is_admin() OR onboarded_by = current_app_user_id() OR agent_id = current_app_user_id())
-  WITH CHECK (current_app_is_admin() OR onboarded_by = current_app_user_id() OR agent_id = current_app_user_id());
+  USING (current_app_is_admin() OR onboarded_by::TEXT = current_app_user_id_text() OR agent_id::TEXT = current_app_user_id_text())
+  WITH CHECK (current_app_is_admin() OR onboarded_by::TEXT = current_app_user_id_text() OR agent_id::TEXT = current_app_user_id_text());
 
 -- PURCHASES: the contract must belong to a farmer onboarded by the user
 -- (or the contract was created by the user), else admin.
@@ -60,15 +74,15 @@ DROP POLICY IF EXISTS ownership_contracts ON murabaha_contracts;
 CREATE POLICY ownership_contracts ON murabaha_contracts
   USING (
     current_app_is_admin()
-    OR created_by = current_app_user_id()
-    OR agent_id   = current_app_user_id()
-    OR customer_id IN (SELECT id FROM customers WHERE onboarded_by = current_app_user_id() OR agent_id = current_app_user_id())
+    OR created_by::TEXT = current_app_user_id_text()
+    OR agent_id::TEXT   = current_app_user_id_text()
+    OR customer_id IN (SELECT id FROM customers WHERE onboarded_by::TEXT = current_app_user_id_text() OR agent_id::TEXT = current_app_user_id_text())
   )
   WITH CHECK (
     current_app_is_admin()
-    OR created_by = current_app_user_id()
-    OR agent_id   = current_app_user_id()
-    OR customer_id IN (SELECT id FROM customers WHERE onboarded_by = current_app_user_id() OR agent_id = current_app_user_id())
+    OR created_by::TEXT = current_app_user_id_text()
+    OR agent_id::TEXT   = current_app_user_id_text()
+    OR customer_id IN (SELECT id FROM customers WHERE onboarded_by::TEXT = current_app_user_id_text() OR agent_id::TEXT = current_app_user_id_text())
   );
 
 -- INVENTORY: the item must have been created/listed by the user (or admin).
@@ -78,8 +92,8 @@ ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ownership_products ON products;
 CREATE POLICY ownership_products ON products
-  USING (current_app_is_admin() OR created_by = current_app_user_id())
-  WITH CHECK (current_app_is_admin() OR created_by = current_app_user_id());
+  USING (current_app_is_admin() OR created_by::TEXT = current_app_user_id_text())
+  WITH CHECK (current_app_is_admin() OR created_by::TEXT = current_app_user_id_text());
 
 -- ---------------------------------------------------------------------
 -- 2. Split-data protection trigger (finance columns)
@@ -196,22 +210,22 @@ ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallets FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ownership_wallets ON wallets;
 CREATE POLICY ownership_wallets ON wallets
-  USING (current_app_is_admin() OR user_id = current_app_user_id())
-  WITH CHECK (current_app_is_admin() OR user_id = current_app_user_id());
+  USING (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text())
+  WITH CHECK (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text());
 
 ALTER TABLE wallet_ledger ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallet_ledger FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ownership_wallet_ledger ON wallet_ledger;
 CREATE POLICY ownership_wallet_ledger ON wallet_ledger
-  USING (current_app_is_admin() OR user_id = current_app_user_id())
-  WITH CHECK (current_app_is_admin() OR user_id = current_app_user_id());
+  USING (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text())
+  WITH CHECK (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text());
 
 ALTER TABLE earning_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE earning_rules FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ownership_earning_rules ON earning_rules;
 CREATE POLICY ownership_earning_rules ON earning_rules
-  USING (current_app_is_admin() OR user_id = current_app_user_id())
-  WITH CHECK (current_app_is_admin() OR user_id = current_app_user_id());
+  USING (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text())
+  WITH CHECK (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text());
 
 -- NOTE: the wallet_balance_guard trigger is intentionally NOT attached by
 -- default because the wallet_ledger_apply trigger already performs the balance
@@ -234,8 +248,8 @@ BEGIN
     EXECUTE 'ALTER TABLE payout_accounts FORCE ROW LEVEL SECURITY';
     EXECUTE 'DROP POLICY IF EXISTS ownership_payout_accounts ON payout_accounts';
     EXECUTE 'CREATE POLICY ownership_payout_accounts ON payout_accounts
-               USING (current_app_is_admin() OR user_id = current_app_user_id())
-               WITH CHECK (current_app_is_admin() OR user_id = current_app_user_id())';
+               USING (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text())
+               WITH CHECK (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text())';
   END IF;
 
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='wallet_withdrawals') THEN
@@ -244,8 +258,8 @@ BEGIN
     EXECUTE 'DROP POLICY IF EXISTS ownership_wallet_withdrawals ON wallet_withdrawals';
     -- A user sees withdrawals they own (source) or that pay them (recipient); admins global.
     EXECUTE 'CREATE POLICY ownership_wallet_withdrawals ON wallet_withdrawals
-               USING (current_app_is_admin() OR user_id = current_app_user_id() OR recipient_user_id = current_app_user_id())
-               WITH CHECK (current_app_is_admin() OR user_id = current_app_user_id() OR recipient_user_id = current_app_user_id())';
+               USING (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text() OR recipient_user_id::TEXT = current_app_user_id_text())
+               WITH CHECK (current_app_is_admin() OR user_id::TEXT = current_app_user_id_text() OR recipient_user_id::TEXT = current_app_user_id_text())';
   END IF;
 END $$;
 
