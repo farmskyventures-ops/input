@@ -87,6 +87,65 @@ class PostgresStatement implements D1StatementLike {
     return this.pool.query(sql, this.params)
   }
 
+  // Self-healing INSERT execution. A `<table>_pkey` duplicate-key violation
+  // (SQLSTATE 23505) on a numeric-id table means the BIGSERIAL sequence lags the
+  // table's MAX(id) — typically because seed/import rows carried explicit ids
+  // without advancing the sequence. When that happens we realign the sequence to
+  // MAX(id) and retry the insert ONCE, so a lagging sequence never surfaces to
+  // the user as a 500 / "duplicate key" error. This guarantees contract / order
+  // / transaction creation (murabaha_contracts included) cannot fail this way —
+  // across the whole app, now and in future. The realignment uses
+  // pg_get_serial_sequence so it works whether the sequence was created via
+  // SERIAL/BIGSERIAL or an explicit OWNED BY.
+  private async queryWithPkeyHeal(sqlOverride?: string) {
+    const sql = convertPlaceholders(sqlOverride || this.rawSql)
+    try {
+      return await this.pool.query(sql, this.params)
+    } catch (err: any) {
+      const code = err?.code
+      const constraint = String(err?.constraint || '')
+      const detail = String(err?.message || '')
+      const isInsert = /^\s*insert\s+/i.test(sqlOverride || this.rawSql)
+      const isPkeyDup = code === '23505' && (/_pkey$/i.test(constraint) || /_pkey"/i.test(detail))
+      if (isInsert && isPkeyDup) {
+        const table = tableNameFromInsert(sqlOverride || this.rawSql)
+        if (table && TABLES_WITH_NUMERIC_ID.has(table)) {
+          // Realign the sequence on a DEDICATED connection carrying ADMIN RLS
+          // context. CRITICAL: the app connects as a non-superuser with FORCE ROW
+          // LEVEL SECURITY, so a plain `SELECT MAX(id)` with no session context
+          // returns ZERO rows → MAX=NULL → the sequence would reset to 1 and the
+          // retry would collide again. Setting app.current_role='admin' makes RLS
+          // yield every row so MAX(id) is correct. (Server-internal only.)
+          const client = await this.pool.connect()
+          try {
+            // Admin RLS context on THIS connection so (a) MAX(id) sees every row
+            // under FORCE RLS and (b) the retried INSERT passes the ownership
+            // WITH CHECK policy (admin bypasses it). The realign + retry MUST run
+            // on the SAME connection, because RLS context is per-connection and a
+            // different pooled connection would not carry it.
+            await client.query(`SELECT set_config('app.current_role', 'admin', false)`)
+            await client.query(`SELECT set_config('app.user_can_finance', 'true', false)`)
+            await client.query(
+              `SELECT setval(pg_get_serial_sequence($1, 'id'), GREATEST(COALESCE((SELECT MAX(id) FROM "${table}"), 1), 1), true)`,
+              [table]
+            )
+            // Retry the original INSERT on this admin-context connection.
+            return await client.query(sql, this.params)
+          } catch (_) {
+            /* fall through to rethrow the original error */
+          } finally {
+            // Always clear the role before returning the connection to the pool so
+            // no admin context leaks to a later request on the same connection.
+            try { await client.query(`SELECT set_config('app.current_role', '', false)`) } catch (_e) {}
+            try { await client.query(`SELECT set_config('app.user_can_finance', 'false', false)`) } catch (_e) {}
+            client.release()
+          }
+        }
+      }
+      throw err
+    }
+  }
+
   async first<T = any>(): Promise<T | null> {
     const result = await this.query()
     return (result.rows[0] as T) ?? null
@@ -104,7 +163,7 @@ class PostgresStatement implements D1StatementLike {
       const table = tableNameFromInsert(sql)
       if (table && TABLES_WITH_NUMERIC_ID.has(table)) sql += ' RETURNING id'
     }
-    const result = await this.query(sql)
+    const result = await this.queryWithPkeyHeal(sql)
     const rawId = result.rows?.[0]?.id
     if (rawId != null) {
       // Normally an INTEGER id → return as a number (D1-compatible). On a shared

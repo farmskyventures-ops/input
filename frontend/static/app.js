@@ -63,7 +63,7 @@ window.btnReset = btnReset
 const payLabel = (t, model) => {
   if (t === 'financing') {
     return model === 'paygo'
-      ? 'PAYGO <span class="text-[10px] text-slate-400">(M-KOPA-style equipment financing)</span>'
+      ? 'PAYGO <span class="text-[10px] text-slate-400">(pay-as-you-grow input financing)</span>'
       : 'Financing <span class="text-[10px] text-slate-400">(interest-based)</span>'
   }
   return t === 'cash'
@@ -806,10 +806,10 @@ function navItems() {
     { k: 'onboard', i: 'fa-user-plus', t: 'Add Farmer' },
     { k: 'customers', i: 'fa-users', t: 'My Farmers' },
     ...(canDo('can_manage_inventory') ? [{ k: 'inventory', i: 'fa-boxes-stacked', t: 'My Inventory' }] : []),
-    { k: 'contracts', i: 'fa-file-signature', t: 'Credit Purchases' },
+    { k: 'contracts', i: 'fa-file-signature', t: 'Purchases and Contracts' },
     myWallet])
   if (r === 'customer') return withAccount([...common,
-    { k: 'shop', i: 'fa-store', t: 'Equipment Shop' },
+    { k: 'shop', i: 'fa-store', t: 'Input Shop' },
     { k: 'contracts', i: 'fa-file-signature', t: 'My Purchases' }])
   if (r === 'support') return withAccount([...common,
     { k: 'customers', i: 'fa-users', t: 'Customers' },
@@ -847,13 +847,13 @@ function renderApp() {
           <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
           <div class="min-w-0">
             <h2 id="pageTitle" class="text-xl font-bold text-slate-800 truncate"></h2>
-            <div class="text-xs text-slate-500 md:hidden"><i class="fas fa-tractor text-teal-600 mr-1"></i>Cash, PAYGO & Equipment Financing</div>
+            <div class="text-xs text-slate-500 md:hidden"><i class="fas fa-seedling text-teal-600 mr-1"></i>Cash, PAYGO & Input Financing</div>
           </div>
         </div>
         <div class="flex items-center gap-3">
           ${useApisButton()}
           ${scoreHeaderButton()}
-          <div class="text-sm text-slate-500 hidden md:block"><i class="fas fa-tractor text-teal-600 mr-1"></i>Cash, PAYGO & Equipment Financing</div>
+          <div class="text-sm text-slate-500 hidden md:block"><i class="fas fa-seedling text-teal-600 mr-1"></i>Cash, PAYGO & Input Financing</div>
         </div>
       </header>
       <div id="content-wrap"><div id="content"></div></div>
@@ -864,7 +864,7 @@ function renderApp() {
 }
 window.go = (r) => { state.route = r; toggleSidebar(false); renderApp() }
 function route() {
-  const titles = { dashboard: 'Dashboard', approvals: 'Financing Approvals', inventory: 'Equipment Inventory', finance_queue: 'Finance Approval Queue', customers: 'Customers', contracts: 'Purchases & Contracts', agents: 'Agent Management', users: 'User Accounts & Access', repayments: 'Repayment Performance', onboard: 'Farmer Onboarding', shop: 'Equipment Shop', exports: 'Data Export & Reports', settings: 'Financing & Markup Settings', profile: 'My Account', wallet: 'My Wallet', wallets: 'Wallets & Payouts', ledger: 'Unified Payment Ledger', amendments: 'Pending Profile Amendments', imports: 'Bulk User Data Upload', backups: 'Automated System Backups', api_access: 'API Access', api_management: 'API Management' }
+  const titles = { dashboard: 'Dashboard', approvals: 'Financing Approvals', inventory: 'Input Inventory', finance_queue: 'Finance Approval Queue', customers: 'Customers', contracts: 'Purchases & Contracts', agents: 'Agent Management', users: 'User Accounts & Access', repayments: 'Repayment Performance', onboard: 'Farmer Onboarding', shop: 'Input Shop', exports: 'Data Export & Reports', settings: 'Financing & Markup Settings', profile: 'My Account', wallet: 'My Wallet', wallets: 'Wallets & Payouts', ledger: 'Unified Payment Ledger', amendments: 'Pending Profile Amendments', imports: 'Bulk User Data Upload', backups: 'Automated System Backups', api_access: 'API Access', api_management: 'API Management' }
   $('pageTitle').textContent = titles[state.route] || 'Dashboard'
   const map = { dashboard: viewDashboard, approvals: viewApprovals, inventory: viewInventory, finance_queue: viewFinanceQueue, customers: viewCustomers, contracts: viewContracts, agents: viewAgents, users: viewUsers, repayments: viewRepayments, onboard: viewOnboard, shop: viewShop, exports: viewExports, settings: viewSettings, profile: viewProfile, wallet: viewMyWallet, wallets: viewWallets, ledger: viewLedger, amendments: viewAmendments, imports: viewImports, backups: viewBackups, api_access: viewApiAccess, api_management: viewApiManagement }
   ;(map[state.route] || viewDashboard)()
@@ -892,7 +892,7 @@ async function viewDashboard() {
       ${next}
     </div>
     <div class="card p-6"><h3 class="font-bold mb-2"><i class="fas fa-store text-teal-600 mr-2"></i>Quick Actions</h3>
-      <button onclick="go('shop')" class="btn brand-bg text-white px-5 py-2.5 rounded-lg text-sm mr-2"><i class="fas fa-cart-plus mr-1"></i>Buy Equipment</button>
+      <button onclick="go('shop')" class="btn brand-bg text-white px-5 py-2.5 rounded-lg text-sm mr-2"><i class="fas fa-cart-plus mr-1"></i>Buy Inputs</button>
       <button onclick="go('contracts')" class="btn bg-slate-100 px-5 py-2.5 rounded-lg text-sm"><i class="fas fa-list mr-1"></i>My Purchases</button>
     </div>
     <div id="quickCheckout" class="mt-6"></div>`
@@ -915,7 +915,7 @@ async function viewDashboard() {
   } else {
     $('content').innerHTML = `${crossAppBanner()}<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       ${statCard('fa-chart-line', 'Total Sales', fmt(data.total_sales), 'bg-teal-50 text-teal-600')}
-      ${statCard('fa-hand-holding-dollar', 'Equipment Financed', fmt(data.equipment_financed), 'bg-blue-50 text-blue-600')}
+      ${statCard('fa-hand-holding-dollar', 'Inputs Financed', fmt(data.equipment_financed), 'bg-blue-50 text-blue-600')}
       ${statCard('fa-money-bill', 'Cash Sales', fmt(data.cash_sales), 'bg-emerald-50 text-emerald-600')}
       ${statCard('fa-percent', 'Repayment Rate', data.repayment_rate + '%', 'bg-indigo-50 text-indigo-600')}
       ${statCard('fa-triangle-exclamation', 'Default Rate', data.default_rate + '%', 'bg-red-50 text-red-600')}
@@ -1164,21 +1164,26 @@ window.checkoutCart = async () => {
   const items = _cart.map(x => ({ product_id: x.id, quantity: x.qty, payment_type: x.payment_type, term_months: x.term_months }))
   const body = { items, delivery_location: '', consent: true }
   if (_buyFor) body.customer_id = _buyFor.id
-  // KYC GATE: placing an order requires the buyer to have completed registration.
-  // If they have not, redirect straight to the ID / selfie verification flow
-  // (Screenshot 2) instead of attempting the order. The cart is preserved so the
-  // buyer can finalise the same order right after they finish verifying.
-  try {
-    const check = await api.post('/checkout/kyc-check', _buyFor ? { customer_id: _buyFor.id } : {})
-    if (check.data && !check.data.verified) {
-      toast('Complete registration to place your order.', false)
-      closeModal()
-      // returnToShop=true lands the user back on the shop after verifying, with
-      // their cart intact so they can press "Place an Order" again.
-      return completeRegistration(check.data.customer_id, true)
+  // KYC GATE (classification-aware): KYC is MANDATORY only for FINANCING orders.
+  // CASH input purchases (direct or on-behalf) bypass KYC entirely — only a valid
+  // phone is required. So we only run the registration gate when the basket
+  // contains at least one financing item; otherwise cash orders proceed straight
+  // to checkout. The classification is passed upstream (has_financing + items) so
+  // the gateway validates consistently across the ecosystem.
+  const hasFinancing = _cart.some(x => x.payment_type === 'financing')
+  if (hasFinancing) {
+    try {
+      const check = await api.post('/checkout/kyc-check', { ...(_buyFor ? { customer_id: _buyFor.id } : {}), has_financing: true, items })
+      if (check.data && !check.data.verified) {
+        toast('Complete registration to place a financing order.', false)
+        closeModal()
+        // returnToShop=true lands the user back on the shop after verifying, with
+        // their cart intact so they can press "Place an Order" again.
+        return completeRegistration(check.data.customer_id, true)
+      }
+    } catch (err) {
+      return toast(err.response?.data?.error || 'Could not verify registration status', false)
     }
-  } catch (err) {
-    return toast(err.response?.data?.error || 'Could not verify registration status', false)
   }
   try {
     const { data } = await api.post('/murabaha/apply-bundle', body)
@@ -1289,6 +1294,24 @@ function _enterBuyFor(f) {
 }
 window.clearBuyFor = () => { _buyFor = null; _cart = []; toast('Buy-For cancelled'); route() }
 
+// Render the crop/horticultural input specification panel (active ingredient,
+// application rate, acreage coverage, pack size, regulatory registration no.).
+// Only shows rows that are populated so equipment/feed products stay clean.
+function inputSpecsHtml(p) {
+  const rows = [
+    ['Active ingredient', p.active_ingredient],
+    ['Application rate', p.application_rate],
+    ['Acreage coverage', p.acreage_coverage],
+    ['Pack size', p.pack_size],
+    ['Registration no.', p.registration_number]
+  ].filter(r => r[1])
+  if (!rows.length) return ''
+  return `<div class="mt-4 border border-teal-100 rounded-lg overflow-hidden">
+    <div class="bg-teal-50 px-3 py-2 text-[11px] font-semibold text-teal-700 uppercase tracking-wider"><i class="fas fa-seedling mr-1"></i>Input Specifications</div>
+    <div class="divide-y divide-slate-100 text-sm">
+      ${rows.map(([k, v]) => `<div class="flex justify-between px-3 py-2"><span class="text-slate-500">${k}</span><b class="text-right">${esc(v)}</b></div>`).join('')}
+    </div></div>`
+}
 window.productDetail = (id) => {
   const p = _products.find(x => x.id === id)
   if (!p) return
@@ -1302,7 +1325,8 @@ window.productDetail = (id) => {
       <div class="bg-slate-50 p-3 rounded-lg"><p class="text-xs text-slate-500">In Stock</p><b>${p.quantity} ${esc(p.unit)}</b></div>
       <div class="bg-slate-50 p-3 rounded-lg"><p class="text-xs text-slate-500">Pay Later Markup</p><b>${p.credit_markup_pct}%</b></div>
     </div>
-    <button onclick="buyModal(${p.id})" ${p.quantity <= 0 ? 'disabled' : ''} class="btn w-full mt-5 brand-bg text-white py-2.5 rounded-lg text-sm disabled:opacity-40"><i class="fas fa-cart-plus mr-1"></i>Purchase This Product</button>
+    ${inputSpecsHtml(p)}
+    <button onclick="buyModal(${p.id})" ${p.quantity <= 0 ? 'disabled' : ''} class="btn w-full mt-5 brand-bg text-white py-2.5 rounded-lg text-sm disabled:opacity-40"><i class="fas fa-cart-plus mr-1"></i>Purchase This Input</button>
     <button onclick="closeModal()" class="btn w-full mt-2 bg-slate-100 py-2 rounded-lg text-sm">Close</button>`)
 }
 window.buyModal = async (productId) => {
@@ -1461,25 +1485,270 @@ window.addMoreFromBuyModal = (productId) => {
 // ---------------------------------------------------------------------------
 // CONTRACTS
 // ---------------------------------------------------------------------------
+// Purchases & Contracts — CONSOLIDATED BY ORDER. Orders with multiple input
+// line items (same bundled checkout, shared bundle_ref — e.g. seeds + fertilizer
+// + crop protection in one basket) are grouped under a single parent row;
+// single-item / legacy orders show as a one-item order. Each parent row expands
+// to reveal its individual input line items, and "View" opens the whole-order
+// invoice/settlement (payments & receipts tracked per ORDER).
+let _orders = []
 async function viewContracts() {
-  const { data } = await api.get('/murabaha')
-  $('content').innerHTML = `<div class="card table-card">
+  const { data } = await api.get('/murabaha/orders')
+  _orders = data.orders || []
+  _orders.forEach(o => { o.product_summary = (o.items || []).map(i => i.product_name).join(' ') })
+  const statuses = [...new Set(_orders.map(o => o.status).filter(Boolean))].map(s => ({ v: s, t: s }))
+  const ptypes = [...new Set(_orders.map(o => o.payment_type).filter(Boolean))].map(s => ({ v: s, t: s }))
+  window._rerender_contracts = () => {
+    const rows = _orders.filter(o => rowMatchesFilters('contracts', o, {
+      text: ['order_ref', 'customer_name', 'product_summary'],
+      selects: { status: 'status', ptype: 'payment_type' },
+      date: 'created_at'
+    }))
+    $('contractsBody').innerHTML = rows.map(o => orderRowHtml(o)).join('')
+      || '<tr><td colspan="8" class="text-center py-8 text-slate-400">No matching orders</td></tr>'
+    const cnt = $('contractsCount'); if (cnt) cnt.textContent = rows.length + ' order(s)'
+  }
+  $('content').innerHTML = `
+  <div class="flex items-center justify-between mb-4">
+    <div class="text-sm text-slate-500"><span id="contractsCount">${_orders.length} order(s)</span></div>
+  </div>
+  ${filterToolbar('contracts', { search: true, dates: true, selects: [
+    { key: 'status', label: 'Status', options: statuses },
+    { key: 'ptype', label: 'Payment', options: ptypes }
+  ] })}
+  <div class="card table-card">
     <table class="w-full text-sm">
       <thead class="bg-slate-50 text-slate-500 text-xs uppercase"><tr>
-        <th class="text-left px-4 py-3">Ref</th><th class="text-left px-4 py-3">Customer</th><th class="text-left px-4 py-3">Product</th>
-        <th class="text-left px-4 py-3">Type</th><th class="text-right px-4 py-3">Price</th><th class="text-right px-4 py-3">Outstanding</th>
+        <th class="text-left px-4 py-3">Order Ref</th><th class="text-left px-4 py-3">Customer</th><th class="text-left px-4 py-3">Inputs</th>
+        <th class="text-left px-4 py-3">Type</th><th class="text-right px-4 py-3">Order Total</th><th class="text-right px-4 py-3">Outstanding</th>
         <th class="text-left px-4 py-3">Status</th><th></th></tr></thead>
-      <tbody>${data.contracts.map(c => `<tr class="border-t border-slate-100">
-        <td class="px-4 py-3 font-mono text-xs">${esc(c.contract_ref)}</td>
-        <td class="px-4 py-3">${esc(c.customer_name)}</td>
-        <td class="px-4 py-3">${esc(c.product_name)} ×${c.quantity}</td>
-        <td class="px-4 py-3">${payLabel(c.payment_type, c.financing_model)}</td>
-        <td class="px-4 py-3 text-right">${fmt(c.murabaha_price)}</td>
-        <td class="px-4 py-3 text-right">${fmt(c.outstanding)}</td>
-        <td class="px-4 py-3">${badge(c.status)}</td>
-        <td class="px-4 py-3"><button onclick="contractDetail(${c.id})" class="text-teal-600 hover:underline text-xs">View</button></td>
-      </tr>`).join('') || '<tr><td colspan="8" class="text-center py-8 text-slate-400">No contracts</td></tr>'}</tbody>
+      <tbody id="contractsBody"></tbody>
     </table></div>`
+  window._rerender_contracts()
+}
+function orderRowHtml(o) {
+  const key = String(o.order_key).replace(/[^a-zA-Z0-9]/g, '_')
+  const itemsLabel = o.item_count > 1
+    ? `${o.item_count} inputs · ${o.total_quantity} unit(s)`
+    : `${esc((o.items[0] || {}).product_name || '')} ×${(o.items[0] || {}).quantity || 1}`
+  const itemRows = (o.items || []).map(it => `<tr class="bg-slate-50/60 text-xs">
+      <td class="pl-10 pr-4 py-2 font-mono text-slate-500">${esc(it.contract_ref)}</td>
+      <td class="px-4 py-2 text-slate-400"></td>
+      <td class="px-4 py-2">${esc(it.product_name)} ×${it.quantity}</td>
+      <td class="px-4 py-2">${payLabel(it.payment_type, it.financing_model)}</td>
+      <td class="px-4 py-2 text-right">${fmt(it.murabaha_price)}</td>
+      <td class="px-4 py-2 text-right">${fmt(it.outstanding)}</td>
+      <td class="px-4 py-2">${badge(it.status)}</td>
+      <td class="px-4 py-2 text-right"><button onclick="contractDetail(${it.id})" class="text-teal-600 hover:underline text-xs">Item</button></td>
+    </tr>`).join('')
+  return `<tr class="border-t border-slate-100">
+      <td class="px-4 py-3 font-mono text-xs">
+        ${o.item_count > 1 ? `<button onclick="toggleOrderItems('${key}')" class="mr-1 text-slate-400 hover:text-slate-700"><i id="chev_${key}" class="fas fa-chevron-right"></i></button>` : ''}
+        ${esc(o.order_ref)}${o.is_bundle ? ' <span class="text-[10px] text-teal-600 font-sans">(bundle)</span>' : ''}
+      </td>
+      <td class="px-4 py-3">${esc(o.customer_name)}</td>
+      <td class="px-4 py-3">${esc(itemsLabel)}</td>
+      <td class="px-4 py-3">${o.payment_type === 'mixed' ? '<span class="text-xs font-medium text-violet-600">Mixed</span>' : payLabel(o.payment_type, o.financing_model)}</td>
+      <td class="px-4 py-3 text-right">${fmt(o.total_payable)}</td>
+      <td class="px-4 py-3 text-right">${fmt(o.outstanding)}</td>
+      <td class="px-4 py-3">${badge(o.status)}</td>
+      <td class="px-4 py-3 whitespace-nowrap text-right">
+        <button onclick="orderDetail('${esc(o.order_ref)}')" class="text-teal-600 hover:underline text-xs">View</button>
+      </td>
+    </tr>
+    ${o.item_count > 1 ? `<tr id="items_${key}" class="hidden"><td colspan="8" class="p-0"><table class="w-full">${itemRows}</table></td></tr>` : ''}`
+}
+window.toggleOrderItems = (key) => {
+  const row = document.getElementById('items_' + key)
+  const chev = document.getElementById('chev_' + key)
+  if (!row) return
+  row.classList.toggle('hidden')
+  if (chev) chev.className = 'fas ' + (row.classList.contains('hidden') ? 'fa-chevron-right' : 'fa-chevron-down')
+}
+// ---------------------------------------------------------------------------
+// ORDER DETAIL — whole-order invoice + settlement. Shows every input line item
+// grouped under one order, the combined repayment schedule & receipts, and
+// settles / invoices / receipts the ORDER as a whole.
+// ---------------------------------------------------------------------------
+window._currentOrder = null
+window.orderDetail = async (ref) => {
+  let data
+  try { data = (await api.get('/murabaha/order/' + encodeURIComponent(ref))).data }
+  catch (err) { return toast(err.response?.data?.error || 'Could not load order', false) }
+  const o = data.order
+  window._currentOrder = { order: o, repayments: data.repayments || [], transactions: data.transactions || [] }
+  if (!o.is_bundle && o.contract_id) return contractDetail(o.contract_id)
+
+  const outstanding = Number(o.outstanding || 0)
+  const paid = Number(o.amount_paid || 0)
+  const total = Number(o.total_payable || 0)
+  const hasBalance = outstanding > 0.5
+  const progress = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0
+  const cashDueItems = (o.items || []).filter(it => it.payment_type === 'cash' && Number(it.outstanding) > 0.5)
+  const cashDue = cashDueItems.reduce((s, it) => s + Number(it.outstanding || 0), 0)
+  const canCollect = state.user.role === 'customer' || canDo('collect_payment') ||
+    ['admin', 'super_admin', 'operations_finance', 'sales_agent'].includes(state.user.role)
+  const isOwningAgent = state.user.role === 'agent' && String(o.agent_id) === String(state.user.id)
+  const canPrompt = canCollect || isOwningAgent
+  const canDispatch = ['admin', 'super_admin', 'operations_finance'].includes(state.user.role) &&
+    (o.items || []).some(it => !['dispatched', 'delivered'].includes(it.dispatch_status))
+
+  const itemRows = (o.items || []).map(it => `<tr class="border-t border-slate-100 text-sm">
+      <td class="px-3 py-2">${esc(it.product_name)}</td>
+      <td class="px-3 py-2 text-center">${it.quantity}</td>
+      <td class="px-3 py-2">${payLabel(it.payment_type, it.financing_model)}</td>
+      <td class="px-3 py-2 text-right">${fmt(it.murabaha_price)}</td>
+      <td class="px-3 py-2 text-right">${fmt(it.outstanding)}</td>
+      <td class="px-3 py-2 text-center">${badge(it.status)}</td>
+      <td class="px-3 py-2 text-right"><button onclick="contractDetail(${it.id})" class="text-teal-600 hover:underline text-xs">Open</button></td>
+    </tr>`).join('')
+
+  showModal(`
+    <div class="flex justify-between items-start mb-3">
+      <div><h3 class="text-lg font-bold">${esc(o.order_ref)} <span class="text-[11px] text-teal-600 font-normal">(order · ${o.item_count} inputs)</span></h3>
+      <p class="text-xs text-slate-500">${esc(o.customer_name)}${o.customer_mobile ? ' · ' + esc(o.customer_mobile) : ''}</p></div>
+      ${badge(o.status)}
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-4">
+      <div class="bg-slate-50 p-3 rounded-lg"><p class="text-xs text-slate-500">Payment</p><b>${o.payment_type === 'mixed' ? 'Mixed' : payLabel(o.payment_type, o.financing_model)}</b></div>
+      <div class="bg-slate-50 p-3 rounded-lg"><p class="text-xs text-slate-500">Order total</p><b>${fmt(total)}</b></div>
+      <div class="bg-emerald-50 p-3 rounded-lg"><p class="text-xs text-slate-500">Paid</p><b class="text-emerald-700">${fmt(paid)}</b></div>
+      <div class="bg-teal-50 p-3 rounded-lg"><p class="text-xs text-slate-500">Outstanding</p><b>${fmt(outstanding)}</b></div>
+    </div>
+    <div class="mb-4"><div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width:${progress}%"></div></div>
+      <div class="text-[10px] text-slate-400 mt-1">${progress}% of the order settled</div></div>
+    <h4 class="font-semibold text-sm mb-2">Order inputs</h4>
+    <div class="border border-slate-200 rounded-lg overflow-hidden mb-4"><table class="w-full">
+      <thead class="bg-slate-50 text-slate-500 text-xs uppercase"><tr>
+        <th class="text-left px-3 py-2">Input</th><th class="text-center px-3 py-2">Qty</th><th class="text-left px-3 py-2">Type</th>
+        <th class="text-right px-3 py-2">Price</th><th class="text-right px-3 py-2">Outstanding</th><th class="text-center px-3 py-2">Status</th><th></th></tr></thead>
+      <tbody>${itemRows}</tbody></table></div>
+    ${window._currentOrder.repayments.length ? `<h4 class="font-semibold text-sm mb-2">Combined Repayment Schedule</h4>
+    <table class="w-full text-xs mb-4"><thead class="text-slate-400"><tr><th class="text-left">Input</th><th class="text-left">#</th><th class="text-left">Due</th><th class="text-right">Amount</th><th class="text-right">Paid</th><th>Status</th></tr></thead>
+    <tbody>${window._currentOrder.repayments.map(r => `<tr class="border-t border-slate-100"><td class="text-slate-500">${esc(r.product_name || '')}</td><td>${r.installment_no}</td><td>${r.due_date}</td><td class="text-right">${fmt(r.amount_due)}</td><td class="text-right">${fmt(r.amount_paid)}</td><td class="text-center">${badge(r.status)}</td></tr>`).join('')}</tbody></table>` : ''}
+    <div class="flex flex-wrap gap-2">
+      ${cashDue > 0.5 && canPrompt ? `<button onclick="settleOrder('${esc(o.order_ref)}')" class="btn flex-1 bg-amber-500 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-wallet mr-1"></i>Settle Order (${fmt(cashDue)})</button>` : ''}
+      ${canDispatch ? `<button onclick="dispatchOrder('${esc(o.order_ref)}')" class="btn flex-1 bg-emerald-600 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-truck mr-1"></i>Dispatch all</button>` : ''}
+      <button onclick="orderInvoice('${esc(o.order_ref)}')" class="btn flex-1 bg-slate-800 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-file-invoice mr-1"></i>Order Invoice</button>
+      <button onclick="orderReceipt('${esc(o.order_ref)}')" class="btn flex-1 bg-slate-700 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-receipt mr-1"></i>Order Receipt</button>
+      <button onclick="closeModal()" class="btn px-4 bg-slate-100 rounded-lg text-sm">Close</button>
+    </div>`)
+}
+window.settleOrder = (ref) => {
+  const oc = window._currentOrder; if (!oc) return
+  const items = (oc.order.items || []).filter(it => it.payment_type === 'cash' && Number(it.outstanding) > 0.5)
+  if (!items.length) return toast('Nothing outstanding to settle on this order.', false)
+  const farmer = { phone: oc.order.customer_mobile, name: oc.order.customer_name }
+  _bundlePayOpts = { phone: farmer.phone, name: farmer.name, balance: true }
+  _bundlePayQueue = items.map(it => ({ id: it.id, amount: Number(it.outstanding), outstanding: Number(it.outstanding) }))
+  const first = _bundlePayQueue.shift()
+  payModal(first.id, first.amount, first.outstanding, 'cash', { ..._bundlePayOpts, bundleNext: _bundlePayQueue.length > 0 })
+}
+window.dispatchOrder = async (ref) => {
+  const oc = window._currentOrder; if (!oc) return
+  const pending = (oc.order.items || []).filter(it => !['dispatched', 'delivered'].includes(it.dispatch_status))
+  try {
+    for (const it of pending) { await api.post(`/murabaha/${it.id}/dispatch`, {}) }
+    toast(`Dispatched ${pending.length} input(s) for order ${ref}`)
+    closeModal(); viewContracts()
+  } catch (err) { toast(err.response?.data?.error || 'Dispatch failed', false) }
+}
+window.orderInvoice = (ref) => {
+  const oc = window._currentOrder; if (!oc) return
+  _orderPrint('Invoice ' + ref, orderInvoiceHtml(oc.order))
+}
+window.orderReceipt = (ref) => {
+  const oc = window._currentOrder; if (!oc) return
+  _orderPrint('Receipt ' + ref, orderReceiptHtml(oc.order, oc.transactions))
+}
+function _docMoney(v) { return 'KES ' + (Math.round(Number(v || 0) * 100) / 100).toLocaleString() }
+function _docDate(v) { try { return new Date(v).toLocaleString() } catch (_) { return String(v || '—') } }
+function _orderBrandHeader(subtitle) {
+  return `<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #0f766e;padding-bottom:12px;margin-bottom:16px;">
+    <img src="/static/farmsky-logo.png" alt="Nia by Farmsky" style="height:56px;width:56px;object-fit:contain;"/>
+    <div><div style="font-size:18pt;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">Nia by Farmsky</div>
+      <div style="font-size:11pt;color:#0f766e;font-weight:600;">${esc(subtitle || '')}</div>
+      <div style="font-size:8pt;color:#94a3b8;">Agricultural &amp; Horticultural Inputs Marketplace</div></div>
+  </div>`
+}
+function orderInvoiceHtml(o) {
+  const rows = (o.items || []).map(it => `<tr>
+      <td style="padding:8px;border:1px solid #cbd5e1;">${esc(it.product_name)}${it.contract_ref ? ` <span style="color:#94a3b8;font-family:monospace;">(${esc(it.contract_ref)})</span>` : ''}</td>
+      <td style="text-align:center;padding:8px;border:1px solid #cbd5e1;">${esc(String(it.quantity || 1))} ${esc(it.product_unit || '')}</td>
+      <td style="text-align:center;padding:8px;border:1px solid #cbd5e1;text-transform:capitalize;">${esc(it.payment_type || '')}</td>
+      <td style="text-align:right;padding:8px;border:1px solid #cbd5e1;">${_docMoney(it.murabaha_price)}</td>
+    </tr>`).join('')
+  const statusColor = o.outstanding <= 0.5 ? '#059669' : o.amount_paid > 0 ? '#d97706' : '#dc2626'
+  const statusLabel = o.outstanding <= 0.5 ? 'PAID' : o.amount_paid > 0 ? 'PARTIAL' : 'UNPAID'
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+    ${_orderBrandHeader('Tax Invoice — Agricultural Inputs Order')}
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div><div style="font-size:9pt;color:#64748b;text-transform:uppercase;">Billed to</div>
+        <div style="font-weight:700;">${esc(o.customer_name || '—')}</div>
+        <div style="font-size:9pt;color:#64748b;">${o.customer_mobile ? esc(o.customer_mobile) : ''}</div></div>
+      <div style="text-align:right;"><div style="font-size:9pt;color:#64748b;text-transform:uppercase;">Order Ref</div>
+        <div style="font-weight:700;font-family:monospace;">${esc(o.order_ref)}</div>
+        <div style="font-size:9pt;color:#64748b;">Issued ${_docDate(o.created_at)}</div>
+        <div style="display:inline-block;margin-top:4px;padding:2px 10px;border-radius:999px;color:#fff;font-size:9pt;font-weight:700;background:${statusColor};">${statusLabel}</div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:10pt;">
+      <thead><tr style="background:#f1f5f9;">
+        <th style="text-align:left;padding:8px;border:1px solid #cbd5e1;">Input</th>
+        <th style="text-align:center;padding:8px;border:1px solid #cbd5e1;">Qty</th>
+        <th style="text-align:center;padding:8px;border:1px solid #cbd5e1;">Type</th>
+        <th style="text-align:right;padding:8px;border:1px solid #cbd5e1;">Amount</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+    <div style="margin-left:auto;width:260px;font-size:10pt;">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#64748b;">Order total</span><b>${_docMoney(o.total_payable)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#64748b;">Paid</span><b style="color:#059669;">${_docMoney(o.amount_paid)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #0f766e;margin-top:4px;"><span style="font-weight:700;">Balance Due</span><b style="color:${o.outstanding > 0.5 ? '#d97706' : '#059669'};">${_docMoney(o.outstanding)}</b></div>
+    </div>
+    <div style="text-align:center;font-size:8.5pt;color:#94a3b8;margin-top:12px;">Consolidated invoice for all ${o.item_count} agricultural input(s) in this order · Nia by Farmsky.</div>
+  </div>`
+}
+function orderReceiptHtml(o, transactions) {
+  const pays = (transactions || []).filter(t => Number(t.amount) > 0)
+  const header = _orderBrandHeader('Payment Receipt — Agricultural Inputs Order')
+  if (!pays.length) return `<div style="font-family:Arial,Helvetica,sans-serif;">${header}<div style="text-align:center;color:#64748b;padding:24px;">No payments have been recorded for this order yet.</div></div>`
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+    ${header}
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div><div style="font-size:9pt;color:#64748b;text-transform:uppercase;">Received from</div>
+        <div style="font-weight:700;">${esc(o.customer_name || '—')}</div>
+        <div style="font-size:9pt;color:#64748b;">Order ${esc(o.order_ref)} · ${o.item_count} input(s)</div></div>
+      <div style="text-align:right;"><div style="display:inline-block;padding:2px 10px;border-radius:999px;color:#fff;font-size:9pt;font-weight:700;background:${o.outstanding <= 0.5 ? '#059669' : '#d97706'};">${o.outstanding <= 0.5 ? 'PAID IN FULL' : 'PARTIALLY PAID'}</div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:9.5pt;">
+      <thead><tr style="background:#f1f5f9;">
+        <th style="text-align:left;padding:7px;border:1px solid #cbd5e1;">Date</th>
+        <th style="text-align:left;padding:7px;border:1px solid #cbd5e1;">Input</th>
+        <th style="text-align:left;padding:7px;border:1px solid #cbd5e1;">Reference</th>
+        <th style="text-align:left;padding:7px;border:1px solid #cbd5e1;">Method</th>
+        <th style="text-align:right;padding:7px;border:1px solid #cbd5e1;">Amount</th>
+      </tr></thead>
+      <tbody>${pays.map(p => `<tr>
+        <td style="padding:7px;border:1px solid #cbd5e1;">${_docDate(p.created_at || p.paid_at)}</td>
+        <td style="padding:7px;border:1px solid #cbd5e1;">${esc(p.product_name || '')}</td>
+        <td style="padding:7px;border:1px solid #cbd5e1;font-family:monospace;">${esc(p.mpesa_receipt || p.provider_ref || p.transaction_code || p.contract_ref || '')}</td>
+        <td style="padding:7px;border:1px solid #cbd5e1;text-transform:capitalize;">${esc(String(p.method || p.channel || '').replace(/_/g, ' '))}</td>
+        <td style="text-align:right;padding:7px;border:1px solid #cbd5e1;color:#059669;font-weight:600;">${_docMoney(p.amount)}</td>
+      </tr>`).join('')}</tbody></table>
+    <div style="margin-left:auto;width:280px;font-size:10pt;">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#64748b;">Order total</span><b>${_docMoney(o.total_payable)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:#64748b;">Total paid</span><b style="color:#059669;">${_docMoney(o.amount_paid)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #0f766e;margin-top:4px;"><span style="font-weight:700;">Balance remaining</span><b style="color:${o.outstanding > 0.5 ? '#d97706' : '#059669'};">${_docMoney(o.outstanding)}</b></div>
+    </div>
+    <div style="text-align:center;font-size:8.5pt;color:#94a3b8;margin-top:12px;">Consolidated receipt for order ${esc(o.order_ref)} · Nia by Farmsky. Thank you for your business.</div>
+  </div>`
+}
+function _orderPrint(title, bodyHtml) {
+  const w = window.open('', '_blank')
+  if (!w) { toast('Please allow pop-ups to download the PDF', false); return }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
+    <style>@page{margin:18mm 16mm;} body{margin:0;color:#0f172a;font-family:Arial,Helvetica,sans-serif;}</style></head>
+    <body>${bodyHtml}
+    <script>(function(){var imgs=Array.prototype.slice.call(document.images);var pending=imgs.filter(function(i){return !i.complete;}).length;function go(){setTimeout(function(){window.focus();window.print();},150);}if(!pending)return go();imgs.forEach(function(i){if(!i.complete){i.addEventListener('load',done);i.addEventListener('error',done);}});function done(){pending--;if(pending<=0)go();}setTimeout(go,2500);})();<\/script></body></html>`)
+  w.document.close()
 }
 window.contractDetail = async (id) => {
   const { data } = await api.get('/murabaha/' + id)
@@ -1566,7 +1835,7 @@ window.contractDetail = async (id) => {
       ${canPay ? `<button onclick="payModal(${c.id}, ${c.monthly_payment || c.installment_amount || c.outstanding}, ${c.outstanding})" class="btn flex-1 brand-bg text-white py-2.5 rounded-lg text-sm"><i class="fas fa-mobile-alt mr-1"></i>Pay via M-Pesa</button>` : ''}
       ${cashBalanceDue && canCollect ? `<button onclick="payModal(${c.id}, ${outstanding}, ${outstanding}, 'cash')" class="btn flex-1 bg-amber-500 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-wallet mr-1"></i>Pay Balance (${fmt(outstanding)})</button>` : ''}
       ${!isCash && hasBalance && canCollect ? `<button onclick="payModal(${c.id}, ${nextDue ? (Number(nextDue.amount_due) - Number(nextDue.amount_paid||0)) : outstanding}, ${outstanding}, 'repay')" class="btn flex-1 bg-teal-600 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-coins mr-1"></i>Collect Installment</button>` : ''}
-      ${canDispatch ? `<button onclick="dispatchContract(${c.id})" class="btn flex-1 bg-emerald-600 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-truck mr-1"></i>Dispatch Equipment</button>` : ''}
+      ${canDispatch ? `<button onclick="dispatchContract(${c.id})" class="btn flex-1 bg-emerald-600 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-truck mr-1"></i>Dispatch Input</button>` : ''}
       ${canDeliver ? `<button onclick="deliverContract(${c.id})" class="btn flex-1 bg-indigo-600 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-box-open mr-1"></i>Mark Delivered</button>` : ''}
       ${canRequest ? `<button onclick="requestChangeModal('contract', ${c.id}, 'amend contract')" class="btn flex-1 bg-amber-500 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-paper-plane mr-1"></i>Request Admin Change</button>` : ''}
       <button onclick="viewDoc(${c.id})" class="btn flex-1 bg-slate-800 text-white py-2.5 rounded-lg text-sm"><i class="fas fa-file-pdf mr-1"></i>Documents</button>
@@ -1576,7 +1845,7 @@ window.contractDetail = async (id) => {
 window.dispatchContract = async (id) => {
   try {
     await api.post(`/murabaha/${id}/dispatch`, {})
-    toast('Equipment dispatched')
+    toast('Input dispatched')
     closeModal(); viewContracts()
   } catch (err) { toast(err.response?.data?.error || 'Dispatch failed', false) }
 }
@@ -1935,7 +2204,14 @@ function productForm(prefix, p = {}) {
         <input id="${prefix}_subcat" list="${prefix}_subcat_list" value="${esc(p.subcategory || '')}" placeholder="Choose or type a new sub-category" class="px-3 py-2 border rounded-lg">
         <datalist id="${prefix}_subcat_list">${subcategorySuggestions(marketplaceOf(p), p.category).map(c => `<option value="${esc(c)}">`).join('')}</datalist>
       </div>
-      <div style="grid-column:1 / -1"><label class="field-label">Equipment description</label><textarea id="${prefix}_desc" placeholder="Equipment details / description" class="px-3 py-2 border rounded-lg min-h-24">${esc(p.description || '')}</textarea></div>
+      <div style="grid-column:1 / -1"><label class="field-label">Input description</label><textarea id="${prefix}_desc" placeholder="General product description" class="px-3 py-2 border rounded-lg min-h-24">${esc(p.description || '')}</textarea></div>
+      <!-- Crop / horticultural input specifications -->
+      <div style="grid-column:1 / -1" class="text-[11px] font-semibold text-teal-700 uppercase tracking-wider mt-1"><i class="fas fa-seedling mr-1"></i>Input specifications</div>
+      <div><label class="field-label">Active ingredient / composition</label><input id="${prefix}_active_ingredient" value="${esc(p.active_ingredient || '')}" placeholder="e.g. Glyphosate 360 g/L" class="px-3 py-2 border rounded-lg"></div>
+      <div><label class="field-label">Application rate</label><input id="${prefix}_application_rate" value="${esc(p.application_rate || '')}" placeholder="e.g. 2–3 L/acre" class="px-3 py-2 border rounded-lg"></div>
+      <div><label class="field-label">Acreage coverage</label><input id="${prefix}_acreage_coverage" value="${esc(p.acreage_coverage || '')}" placeholder="e.g. Covers 1 acre" class="px-3 py-2 border rounded-lg"></div>
+      <div><label class="field-label">Pack size</label><input id="${prefix}_pack_size" value="${esc(p.pack_size || '')}" placeholder="e.g. 50 kg bag / 1 L bottle" class="px-3 py-2 border rounded-lg"></div>
+      <div><label class="field-label">Registration no. (PCPB/KEPHIS)</label><input id="${prefix}_registration_number" value="${esc(p.registration_number || '')}" placeholder="Regulatory registration number" class="px-3 py-2 border rounded-lg"></div>
       <div><label class="field-label">Buying cost</label><input id="${prefix}_buy" type="number" value="${Number(p.buying_price || 0)}" placeholder="Buying price" class="px-3 py-2 border rounded-lg"></div>
       <div><label class="field-label">Quantity in stock</label><input id="${prefix}_qty" type="number" value="${Number(p.quantity || 0)}" placeholder="Quantity" class="px-3 py-2 border rounded-lg"></div>
       <div><label class="field-label">Cash markup %</label><input id="${prefix}_cm" type="number" value="${Number(p.cash_markup_pct || 10)}" placeholder="Cash markup %" class="px-3 py-2 border rounded-lg"></div>
@@ -2010,6 +2286,12 @@ function productPayload(prefix) {
     source_platform: ($(prefix + '_source') && $(prefix + '_source').value) || 'equipment',
     description: $(prefix + '_desc').value,
     product_type: marketplace === 'feeds' ? 'feed' : marketplace === 'inputs' ? 'input' : 'equipment',
+    // Crop / horticultural input specifications.
+    active_ingredient: ($(prefix + '_active_ingredient') && $(prefix + '_active_ingredient').value) || null,
+    application_rate: ($(prefix + '_application_rate') && $(prefix + '_application_rate').value) || null,
+    acreage_coverage: ($(prefix + '_acreage_coverage') && $(prefix + '_acreage_coverage').value) || null,
+    pack_size: ($(prefix + '_pack_size') && $(prefix + '_pack_size').value) || null,
+    registration_number: ($(prefix + '_registration_number') && $(prefix + '_registration_number').value) || null,
     unit: $(prefix + '_unit').value,
     buying_price: Number($(prefix + '_buy').value || 0),
     quantity: Number($(prefix + '_qty').value || 0),
@@ -2140,13 +2422,13 @@ window.doAddProduct = async () => {
 }
 window.editProductModal = (id) => {
   const p = _products.find(x => x.id === id)
-  showModal(`<h3 class="font-bold mb-3">Edit Equipment</h3>${productForm('ep', p)}<div class="flex gap-2 mt-4"><button onclick="doEditProduct(${id})" class="btn flex-1 brand-bg text-white py-2 rounded-lg text-sm">Save Changes</button><button onclick="closeModal()" class="btn px-4 bg-slate-100 rounded-lg text-sm">Cancel</button></div>`)
+  showModal(`<h3 class="font-bold mb-3">Edit Input</h3>${productForm('ep', p)}<div class="flex gap-2 mt-4"><button onclick="doEditProduct(${id})" class="btn flex-1 brand-bg text-white py-2 rounded-lg text-sm">Save Changes</button><button onclick="closeModal()" class="btn px-4 bg-slate-100 rounded-lg text-sm">Cancel</button></div>`)
 }
 window.doEditProduct = async (id) => {
   if (!confirmEdit('Save changes to this equipment record?')) return
   try {
     await api.put('/products/' + id, productPayload('ep'))
-    closeModal(); toast('Equipment updated'); viewInventory()
+    closeModal(); toast('Input updated'); viewInventory()
   } catch (err) { toast(err.response?.data?.error || 'Failed', false) }
 }
 window.deleteProduct = async (id, name) => {
