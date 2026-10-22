@@ -26,7 +26,11 @@ const TABLES_WITH_NUMERIC_ID = new Set([
   'payment_intents', 'change_requests',
   'merchant_keys', 'merchant_checkouts',
   'system_backups', 'import_batches', 'import_rows', 'profile_amendments',
-  'nia_webhook_log'
+  'nia_webhook_log',
+  // Offtake / traceability / logistics (migration 0036) + governance tables (0035).
+  'offtake_contracts', 'offtake_matches', 'aggregation_batches', 'traceability_events',
+  'logistics_vehicles', 'logistics_shipments', 'telemetry_pings',
+  'feature_flags', 'feature_flag_users', 'payment_channels', 'payment_channel_users'
 ])
 
 function convertPlaceholders(sql: string): string {
